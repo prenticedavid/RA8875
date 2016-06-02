@@ -323,7 +323,7 @@ class RA8875 : public Print {
 	void    	drawPixel(int16_t x, int16_t y, uint16_t color);
 	void 		drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y);
 	uint16_t 	getPixel(int16_t x, int16_t y);
-	//void 		getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y);
+	void 		getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y); //.kbv
 	void    	drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
 	void    	drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
 	void    	fillWindow(uint16_t color=_RA8875_DEFAULTBACKLIGHT);//fill the ActiveWindow with a color(default black)
