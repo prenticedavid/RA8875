@@ -2761,8 +2761,8 @@ void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picn
 {  
 	if (_portrait){swapvals(x,y); swapvals(w,h);}//0.69b21 -have to check this, not verified
 	if (_textMode) _setTextMode(false);//we are in text mode?
-	_writeRegister(RA8875_SFCLR,0x00);
-	_writeRegister(RA8875_SROC,0x87);
+	_writeRegister(RA8875_SFCLR,0x03);
+	_writeRegister(RA8875_SROC,0x04);
 	_writeRegister(RA8875_DMACR,0x02);
 	//setActiveWindow(0,_width-1,0,_height-1); 
 	_checkLimits_helper(x,y);
