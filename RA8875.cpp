@@ -1032,7 +1032,7 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 	_writeRegister(RA8875_FNCR1,_FNCR1_Reg);//0.69b21
 	_MWCR0_Reg = (_MWCR0_Reg & ~(3<<2)) | (_portrait ? (2<<2) : 0); //.kbv update copy
 	_writeRegister(RA8875_MWCR0,_MWCR0_Reg);           //.kbv write direction
-	_writeRegister(0x45, (_portrait) ? 0x02 : 0x00);   //.kbv read direction
+	_writeRegister(0x45, (_portrait) ? 0x02 : 0x00);   //.kbv read direction MRCD
 	setActiveWindow();
 }
 
@@ -3447,15 +3447,15 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.k
 	if (_portrait) { 	//.kbv no limit checks.
     	swapvals(x,y); 
 	}
-	_writeRegister(0x4A, x & 0xFF);   //.kbv set the READ registers
+	_writeRegister(0x4A, x & 0xFF);   //.kbv set the READ registers RA8875_RCURH0
 	_writeRegister(0x4A+1, x >> 8);
 	_writeRegister(0x4C, y & 0xFF);
 	_writeRegister(0x4C+1, y >> 8); 
     if (_textMode) _setTextMode(false);//we are in text mode?
     writeCommand(RA8875_MRWC);
-//	#if defined(_FASTCPU)
+	#if defined(_FASTCPU)
 		_slowDownSPI(true);
-//	#endif
+	#endif
     _startSend();
 	_SPI8(RA8875_DATAREAD);
 	_SPI8(0x0);
