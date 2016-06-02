@@ -3441,6 +3441,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
   #endif
 #endif
 
+// .kbv this is 1 bit WRONG in v0.79.   v0.70 works perfectly
 void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.kbv
 {
     uint16_t color; 
