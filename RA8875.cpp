@@ -3461,9 +3461,11 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.k
 	_SPI8(0x0);
 	if (_color_bpp < 16) {
         while (count--) {
-		    color = _XFR8(0x0);
-            *p++ = ((color & 0xE0) << 8)|((color & 0x1C) << 6)|((color & 0x3) << 3);
-        }
+		    uint8_t c = _XFR8(0x0);
+            color = ((c & 0xE0) << 8)|((c & 0x1C) << 6)|((c & 0x3) << 3);
+			color |= ((c & 0x20) ? 0x3C00 : 0)|((c & 0x04) ? 0x00E0 : 0)|((c & 0x01) ? 0x000F : 0);
+			*p++ = color;
+		}
 	} else {
 	    _SPI8(0x0);    //extra dummy
         while (count--) {
