@@ -975,6 +975,9 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 		_FNCR1_Reg &= ~(1 << 4);
 	}
 	_writeRegister(RA8875_FNCR1,_FNCR1_Reg);//0.69b21
+	_MWCR0_Reg = (_MWCR0_Reg & ~(3<<2)) | (_portrait ? (2<<2) : 0); //.kbv for penguin
+	_writeRegister(RA8875_MWCR0,_MWCR0_Reg);            //.kbv set write direction
+	_writeRegister(0x45, (_portrait) ? 0x02 : 0x00);    //.kbv set read direction (MRCD)
 	setActiveWindow();
 }
 
@@ -3320,6 +3323,81 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
 uint16_t RA8875::getPixel(int16_t x, int16_t y)
 {
     uint16_t color;
+	getPixels(&color, 1, x, y);       //.kbv all the nasty stuff in getPixels()
+	return color;
+}
+
+#if defined(__AVR__) && defined(_FASTSSPORT)
+#define _SPI8(x)     _spiwrite(x)
+#define _XFR8(x)     _spiread()
+#else
+  #if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+  #define _SPI8(x)   { if (_altSPI) SPI1.transfer(x); else SPI1.transfer(x); }
+  #else
+  #define _SPI8(x)   SPI.transfer(x)
+  #endif
+  #define _XFR8(x)   _SPI8(x)
+#endif
+
+#if !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
+  #if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
+    #define _XFR16(x)   { if (_altSPI) SPI1.transfer16(x); else SPI1.transfer16(x); }
+  #else
+    #define _XFR16(x)   SPI.transfer16(x)
+  #endif
+#else
+  #if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
+    #define _XFR16(x)   (SPI.transfer(_cs, 0x0, SPI_CONTINUE) | (SPI.transfer(_cs, 0x0, SPI_LAST) << 8)) 
+  #else
+    // I am not happy with this style of macro
+	#if defined(__AVR__) && defined(_FASTSSPORT)
+       #define _XFR16(x)   ((_spiread() << 8) | (_spiread() << 0)) 
+	#else
+       #define _XFR16(x)   ((SPI.transfer(0x0) << 8) | (SPI.transfer(0x0) << 0)) 
+	#endif
+  #endif
+#endif
+
+void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.kbv
+{
+    uint16_t color; 
+	if (_portrait) { 	//.kbv no limit checks.
+    	swapvals(x,y); 
+	}
+	_writeRegister(0x4A, x & 0xFF);   //.kbv set the READ registers RA8875_RCURH0
+	_writeRegister(0x4A+1, x >> 8);
+	_writeRegister(0x4C, y & 0xFF);
+	_writeRegister(0x4C+1, y >> 8); 
+    if (_textMode) _setTextMode(false);//we are in text mode?
+    writeCommand(RA8875_MRWC);
+	#if defined(_FASTCPU)
+		_slowDownSPI(true);
+	#endif
+    _startSend();
+	_SPI8(RA8875_DATAREAD);
+	_SPI8(0x0);
+	if (_color_bpp < 16) {
+        while (count--) {
+		    color = _XFR8(0x0);
+            *p++ = ((color & 0xE0) << 8)|((color & 0x1C) << 6)|((color & 0x3) << 3);
+        }
+	} else {
+	    _SPI8(0x0);    //extra dummy
+        while (count--) {
+		    color = _XFR16(0x0);
+            *p++ = color;
+        }
+	}
+	#if defined(_FASTCPU)
+		_slowDownSPI(false);
+	#endif
+    _endSend();
+}
+
+/*
+uint16_t RA8875::getPixel(int16_t x, int16_t y)
+{
+    uint16_t color;
     setXY(x,y);
 	if (_textMode) _setTextMode(false);//we are in text mode?
     writeCommand(RA8875_MRWC);
@@ -3374,7 +3452,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
     _endSend();
     return color;
 }
-
+*/
 
 /*
 void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)
