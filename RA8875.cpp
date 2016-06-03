@@ -3358,6 +3358,19 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
   #endif
 #endif
 
+#if defined(SPI_HAS_TRANSACTION)
+  #define SET_READ_SPEED()     { _SPImaxSpeed = _SPImaxSpeed/2; }
+  #define SET_WRITE_SPEED()    { _SPImaxSpeed = _SPImaxSpeed*2; }
+#else
+  #if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
+     #define SET_READ_SPEED()  { SPI.setClockDivider(_cs,SPI_SPEED_READ); }
+     #define SET_WRITE_SPEED() { SPI.setClockDivider(_cs,SPI_SPEED_WRITE); }
+  #else
+	 #define SET_READ_SPEED()  { SPI.setClockDivider(SPI_SPEED_READ); }
+	 #define SET_WRITE_SPEED() { SPI.setClockDivider(SPI_SPEED_WRITE); }
+  #endif
+#endif
+
 void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.kbv
 {
     uint16_t color; 
@@ -3373,16 +3386,8 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.k
 	#if defined(_FASTCPU)
 		_slowDownSPI(true);
 	#endif
-	#if defined(SPI_HAS_TRANSACTION)
-		if (_inited) _SPImaxSpeed = _SPImaxSpeed/2;
-	#else
-		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
-			if (_inited) SPI.setClockDivider(_cs,SPI_SPEED_READ);
-		#else
-			if (_inited) SPI.setClockDivider(SPI_SPEED_READ);
-		#endif
-	#endif
-    _startSend();
+    if (_inited) SET_READ_SPEED();    //.kbv really does not like > 4MHz
+	_startSend();
 	_SPI8(RA8875_DATAREAD);
 	_SPI8(0x0);
 	if (_color_bpp < 16) {
@@ -3403,15 +3408,7 @@ void RA8875::getPixels(uint16_t * p, uint32_t count, int16_t x, int16_t y)  //.k
 		_slowDownSPI(false);
 	#endif
     _endSend();
-	#if defined(SPI_HAS_TRANSACTION)
-		if (_inited) _SPImaxSpeed = _SPImaxSpeed*2;
-	#else
-		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
-			if (_inited) SPI.setClockDivider(_cs,SPI_SPEED_WRITE);
-		#else
-			if (_inited) SPI.setClockDivider(SPI_SPEED_WRITE);
-		#endif
-	#endif
+    if (_inited) SET_WRITE_SPEED();
 }
 
 /*
